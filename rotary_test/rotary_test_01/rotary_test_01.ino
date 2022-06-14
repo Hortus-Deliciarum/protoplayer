@@ -10,9 +10,9 @@
 
 #elif defined(ESP32)
 // Example for ESP8266 NodeMCU with input signals on pin D5 and D6
-#define PIN_IN1 0
-#define PIN_IN2 4
-#define PUSH 15
+#define PIN_IN1 12
+#define PIN_IN2 14
+#define PUSH 13
 
 #endif
 
@@ -20,6 +20,7 @@
 RotaryEncoder encoder(PIN_IN1, PIN_IN2, RotaryEncoder::LatchMode::FOUR3);
 
 bool state = false;
+int ledstate = 0;
 
 void IRAM_ATTR ISR() {
     state = true;
@@ -34,8 +35,9 @@ void setup()
   Serial.begin(115200);
   while (! Serial);
   Serial.println("SimplePollRotator example for the RotaryEncoder library.");
+  pinMode(2, OUTPUT);
   pinMode(PUSH, INPUT_PULLUP);
-  attachInterrupt(PUSH, ISR, RISING);
+  attachInterrupt(PUSH, ISR, CHANGE);
 } // setup()
 
 
@@ -57,6 +59,8 @@ void loop()
   if (state) {
     Serial.println("pressed");
     state = false;  
+    ledstate = 1 - ledstate;
+    digitalWrite(2, ledstate);
   }
 } // loop ()
 
