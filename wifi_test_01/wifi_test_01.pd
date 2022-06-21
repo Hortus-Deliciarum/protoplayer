@@ -1,6 +1,6 @@
 #N canvas 757 61 1163 739 12;
-#X obj 261 83 vsl 90 255 0 1 0 0 empty empty empty 0 -9 0 10 -262144
--1 -1 0 1;
+#X obj 158 47 vsl 90 255 1 21 0 0 empty empty empty 0 -9 0 10 -262144
+-1 -1 13200 1;
 #X floatatom 261 354 5 0 0 0 - - -;
 #X obj 368 282 netsend -u -b;
 #X obj 505 209 oscformat callback;
@@ -11,7 +11,8 @@
 #X obj 505 259 list trim;
 #X obj 366 375 int;
 #X obj 366 400 change;
-#X connect 0 0 1 0;
+#X floatatom 158 310 5 0 0 0 - - -;
+#X connect 0 0 11 0;
 #X connect 1 0 4 0;
 #X connect 3 0 7 0;
 #X connect 4 0 3 0;
@@ -20,3 +21,4 @@
 #X connect 7 0 8 0;
 #X connect 8 0 2 0;
 #X connect 9 0 10 0;
+#X connect 11 0 1 0;
