@@ -1,8 +1,9 @@
 #include "Audio.h"
 #include <SD.h>
 #include "FS.h"
-#include <ArduinoOSCWiFi.h>
+#include "ArduinoOSCWiFi.h"
 #include <NRotary.h>
+#include <Button2.h>
 
 
 // Digital I/O used
@@ -21,7 +22,12 @@
 #define ROTARY_PIN1 14
 #define ROTARY_PIN2 12
 
-Rotary rotary = Rotary(ROTARY_PIN1, ROTARY_PIN2, PUSH, true, INPUT_PULLUP, 50);
+bool usingInterrupt = true;
+
+Rotary rotary = Rotary(ROTARY_PIN1, ROTARY_PIN2, usingInterrupt, true, INPUT_PULLUP, 50);
+Button2 button;
+
+bool button_state = false; 
 
 
 String notes[8] = {
@@ -50,17 +56,19 @@ void rotaryServiceRoutineWrapper()
 
 uint8_t counter = 0;
 
+/*
 struct Button {
   const uint8_t PIN;
   uint8_t previous;
 };
 
 Button button = {PUSH, 1};
+*/
 int volume = 10;
 int previous_volume = 10;
 
-const char* ssid = "FASTWEB-DAB6F7";
-const char* password = "1NJYRZE2T4";
+const char* ssid = "FASTWEB-2yurFq";
+const char* password = "yBqCDXC6w8";
 const int recv_port = 54321;
 
 void initWiFi() {
@@ -82,9 +90,16 @@ void onOscReceived(const OscMessage& m) {
     audio.setVolume(volume);
 }
 
+void released(Button2& btn) {
+    Serial.println("released: ");
+    //Serial.println(btn.wasPressedFor());
+    button_state = true; 
+    
+}
+
 void setup(){
     pinMode(SD_CS, OUTPUT);
-    pinMode(button.PIN, INPUT_PULLUP);
+    //pinMode(button.PIN, INPUT_PULLUP);
     digitalWrite(SD_CS, HIGH);
     SPI.begin(SPI_SCK, SPI_MISO, SPI_MOSI);
     Serial.begin(115200);
@@ -92,17 +107,21 @@ void setup(){
 
     attachInterrupt(digitalPinToInterrupt(ROTARY_PIN1), rotaryServiceRoutineWrapper, rotary.mode);
 
+    button.begin(PUSH);
+    button.setReleasedHandler(released);
+
     initWiFi();
     OscWiFi.subscribe(recv_port, "/callback", onOscReceived);    
     
     audio.setPinout(I2S_BCLK, I2S_LRC, I2S_DOUT);
     audio.setVolume(volume); // 0...21
-    audio.connecttoFS(SD, "see.wav");
+    audio.connecttoFS(SD, "bsesample.wav");
 }
 
 void loop(){
     OscWiFi.parse();
     audio.loop();
+    button.loop();
 
     rotaryState = rotary.getState();
 
@@ -129,7 +148,19 @@ void loop(){
       audio.setVolume(volume);
       previous_volume = volume;
     }
+
+    if (button_state) {
+      audio.setVolume(0);
+      audio.connecttoFS(SD, notes[counter].c_str());
+      audio.setVolume(volume);
+      button_state = false; 
+      counter++;
+      if (counter > 7)
+        counter = 0;   
+    }
     
+
+    /*
     uint8_t reading = digitalRead(button.PIN);    
 
     if (reading == PRESS) {
@@ -143,5 +174,6 @@ void loop(){
     } 
   
   button.previous = reading;
+  */
     
 }
