@@ -17,6 +17,7 @@
 #define PUSH          13
 #define PRESS         0
 #define RELEASE       1
+#define MAX_VOLUME    21
 
 
 #define ROTARY_PIN1 14
@@ -64,8 +65,8 @@ struct Button {
 
 Button button = {PUSH, 1};
 */
-int volume = 10;
-int previous_volume = 10;
+int volume = MAX_VOLUME;
+int previous_volume = MAX_VOLUME;
 
 const char* ssid = "FASTWEB-2yurFq";
 const char* password = "yBqCDXC6w8";
@@ -86,7 +87,7 @@ Audio audio;
 
 void onOscReceived(const OscMessage& m) {
     volume = (int)m.arg<float>(0);
-    volume = constrain(volume, 0, 21);
+    volume = constrain(volume, 0, MAX_VOLUME);
     audio.setVolume(volume);
 }
 
@@ -131,7 +132,7 @@ void loop(){
     if (rotaryState == CLOCKWISE)
     {
         volume--;
-        volume = constrain(volume, 0, 21);
+        volume = constrain(volume, 0, MAX_VOLUME);
         Serial.print("CLOCKWISE ");
         Serial.println(volume);
     }
@@ -139,7 +140,7 @@ void loop(){
     if (rotaryState == COUNTER_CLOCKWISE)
     {
         volume++;
-        volume = constrain(volume, 0, 21);
+        volume = constrain(volume, 0, MAX_VOLUME);
         Serial.print("COUNTER-CLOCKWISE ");
         Serial.println(volume);
     }
