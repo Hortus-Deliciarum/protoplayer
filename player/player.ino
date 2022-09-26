@@ -1,7 +1,8 @@
 #include "Audio.h"
 #include <SD.h>
 #include "FS.h"
-#include "ArduinoOSCWiFi.h"
+//#include "ArduinoOSCWiFi.h"
+#include <HortusWifi.h>
 #include <NRotary.h>
 #include <Button2.h>
 
@@ -14,22 +15,48 @@
 #define I2S_DOUT      25
 #define I2S_BCLK      27
 #define I2S_LRC       26
+
 #define PUSH          13
+#define PUSH2         15
+
 #define PRESS         0
 #define RELEASE       1
 #define MAX_VOLUME    21
+#define DEF_VOLUME    15
 
 
-#define ROTARY_PIN1 14
-#define ROTARY_PIN2 12
+#define ROTARY1_PIN1 14
+#define ROTARY1_PIN2 12
+
+#define ROTARY2_PIN1 4
+#define ROTARY2_PIN2 0
 
 bool usingInterrupt = true;
 
-Rotary rotary = Rotary(ROTARY_PIN1, ROTARY_PIN2, usingInterrupt, true, INPUT_PULLUP, 50);
-Button2 button;
+typedef struct {
+  byte number;
+  Rotary& rotary; 
+  int state;
+  bool _switch; 
+} _Rotary;
 
-bool button_state = false; 
+Rotary rtr1 = Rotary(ROTARY1_PIN1, ROTARY1_PIN2, usingInterrupt, true, INPUT_PULLUP, 50);
+Rotary rtr2 = Rotary(ROTARY2_PIN1, ROTARY2_PIN2, usingInterrupt, true, INPUT_PULLUP, 50);
 
+_Rotary rotary1 = { 1, rtr1, IDLE, false };
+_Rotary rotary2 = { 2, rtr1, IDLE, false };
+
+
+typedef struct {
+  byte number;
+  Button2& button;
+  bool state;
+} Button;
+
+Button2 btn1, btn2;
+
+Button button1 = { 1, btn1, false };
+Button button2 = { 2, btn2, false }; 
 
 String notes[8] = {
   "01.wav",
@@ -42,46 +69,31 @@ String notes[8] = {
   "08.wav"
   };
 
-//Where to save rotary turning state.
-int rotaryState = IDLE;
 
-//Where to save rotary switch state.
-bool rotarySwitch = false;
+/*
+int rotary1State = IDLE;
+bool rotary1Switch = false;
+*/
 
 //Interrupt Service Routine(ISR).
-void rotaryServiceRoutineWrapper()
+void rotary1ServiceRoutineWrapper()
 {
-    //Run rotary.serviceRoutine() here.
-    rotary.serviceRoutine();
+    //Run rotary1.serviceRoutine() here.
+    rotary1.rotary.serviceRoutine();
+}
+
+//Interrupt Service Routine(ISR).
+void rotary2ServiceRoutineWrapper()
+{
+    //Run rotary1.serviceRoutine() here.
+    rotary2.rotary.serviceRoutine();
 }
 
 uint8_t counter = 0;
+int volume = DEF_VOLUME;
+int previous_volume = DEF_VOLUME;
+String AWAKE = "/player/awake";
 
-/*
-struct Button {
-  const uint8_t PIN;
-  uint8_t previous;
-};
-
-Button button = {PUSH, 1};
-*/
-int volume = MAX_VOLUME;
-int previous_volume = MAX_VOLUME;
-
-const char* ssid = "FASTWEB-2yurFq";
-const char* password = "yBqCDXC6w8";
-const int recv_port = 54321;
-
-void initWiFi() {
-  WiFi.mode(WIFI_STA);
-  WiFi.begin(ssid, password);
-  Serial.print("Connecting to WiFi ..");
-  while (WiFi.status() != WL_CONNECTED) {
-    Serial.print('.');
-    delay(1000);
-  }
-  Serial.println(WiFi.localIP());
-}
 
 Audio audio;
 
@@ -91,14 +103,21 @@ void onOscReceived(const OscMessage& m) {
     audio.setVolume(volume);
 }
 
+
 void released(Button2& btn) {
-    Serial.println("released: ");
-    //Serial.println(btn.wasPressedFor());
-    button_state = true; 
-    
+    if (btn == button1.button) {
+      Serial.println("released PUSH1");
+      button1.state = true; 
+    } else if (btn == button2.button) {
+      Serial.println("released PUSH2");
+      button2.state = true; 
+    }  
 }
 
+
 void setup(){
+
+    // SPI && SD SETUP
     pinMode(SD_CS, OUTPUT);
     //pinMode(button.PIN, INPUT_PULLUP);
     digitalWrite(SD_CS, HIGH);
@@ -106,30 +125,28 @@ void setup(){
     Serial.begin(115200);
     SD.begin(SD_CS);
 
-    attachInterrupt(digitalPinToInterrupt(ROTARY_PIN1), rotaryServiceRoutineWrapper, rotary.mode);
-
-    button.begin(PUSH);
-    button.setReleasedHandler(released);
-
-    initWiFi();
-    OscWiFi.subscribe(recv_port, "/callback", onOscReceived);    
+    // ROTARY && BUTTON SETUP
+    attachInterrupt(digitalPinToInterrupt(ROTARY1_PIN1), rotary1ServiceRoutineWrapper, rotary1.rotary.mode);
+    attachInterrupt(digitalPinToInterrupt(ROTARY2_PIN1), rotary2ServiceRoutineWrapper, rotary2.rotary.mode);
     
+    button1.button.begin(PUSH);
+    button1.button.setReleasedHandler(released);
+
+    button2.button.begin(PUSH2);
+    button2.button.setReleasedHandler(released);
+
+    // NETWORK && OSC SETUP
+    HortusWifi(HortusWifi::Connection::BARETTI, 50, AWAKE);
+    OscWiFi.subscribe(HortusWifi::RECV_PORT, "/callback", onOscReceived);    
+
+    // AUDIO SETUP
     audio.setPinout(I2S_BCLK, I2S_LRC, I2S_DOUT);
     audio.setVolume(volume); // 0...21
     audio.connecttoFS(SD, "bsesample.wav");
 }
 
-void loop(){
-    OscWiFi.parse();
-    audio.loop();
-    button.loop();
-
-    rotaryState = rotary.getState();
-
-    //Save the state of the rotary switch.
-    rotarySwitch = rotary.getSwitch();
-
-    if (rotaryState == CLOCKWISE)
+void check_volume(_Rotary& rot) {
+    if (rot->state == CLOCKWISE)
     {
         volume--;
         volume = constrain(volume, 0, MAX_VOLUME);
@@ -137,7 +154,7 @@ void loop(){
         Serial.println(volume);
     }
 
-    if (rotaryState == COUNTER_CLOCKWISE)
+    if (rot->state == COUNTER_CLOCKWISE)
     {
         volume++;
         volume = constrain(volume, 0, MAX_VOLUME);
@@ -148,33 +165,31 @@ void loop(){
     if (volume != previous_volume) {
       audio.setVolume(volume);
       previous_volume = volume;
-    }
+    }  
+}
 
-    if (button_state) {
+void loop(){
+    OscWiFi.update();
+    audio.loop();
+    button1.button.loop();
+    button2.button.loop();
+
+    rotary1.state = rotary1.rotary.getState();
+    rotary2.state = rotary2.rotary.getState();
+
+    //Save the state of the rotary1 switch.
+    rotary1._switch = rotary1.rotary.getSwitch();
+    rotary2._switch = rotary2.rotary.getSwitch();
+
+    check_volume(rotary1);
+
+    if (button1.state) {
       audio.setVolume(0);
       audio.connecttoFS(SD, notes[counter].c_str());
       audio.setVolume(volume);
-      button_state = false; 
+      button1.state = false; 
       counter++;
       if (counter > 7)
         counter = 0;   
     }
-    
-
-    /*
-    uint8_t reading = digitalRead(button.PIN);    
-
-    if (reading == PRESS) {
-      if (button.previous == RELEASE) {
-        audio.connecttoFS(SD, notes[counter].c_str());
-        counter++;
-        if (counter > 7)
-          counter = 0;
-        delay(10);
-      }
-    } 
-  
-  button.previous = reading;
-  */
-    
 }

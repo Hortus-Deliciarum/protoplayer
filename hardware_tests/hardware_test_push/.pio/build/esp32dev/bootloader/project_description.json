@@ -1,0 +1,20 @@
+{
+    "project_name":       "bootloader",
+    "project_path":       "/home/neum/.platformio/packages/framework-espidf/components/bootloader/subproject",
+    "build_dir":          "/home/neum/Documenti/acusmonium/protoplayer/hardware_tests/hardware_test_push/.pio/build/esp32dev/bootloader",
+    "config_file":        "/home/neum/Documenti/acusmonium/protoplayer/hardware_tests/hardware_test_push/sdkconfig",
+    "config_defaults":    "",
+    "app_elf":            "bootloader.elf",
+    "app_bin":            "bootloader.bin",
+    "git_revision":       "3.40100.200827",
+    "target":             "esp32",
+    "phy_data_partition": "",
+    "monitor_baud" :      "115200",
+    "monitor_toolprefix": "xtensa-esp32-elf-",
+    "config_environment" : {
+        "COMPONENT_KCONFIGS" : "/home/neum/.platformio/packages/framework-espidf/components/efuse/Kconfig;/home/neum/.platformio/packages/framework-espidf/components/esp32/Kconfig;/home/neum/.platformio/packages/framework-espidf/components/esp_common/Kconfig;/home/neum/.platformio/packages/framework-espidf/components/log/Kconfig;/home/neum/.platformio/packages/framework-espidf/components/spi_flash/Kconfig",
+        "COMPONENT_KCONFIGS_PROJBUILD" : "/home/neum/.platformio/packages/framework-espidf/components/bootloader/Kconfig.projbuild;/home/neum/.platformio/packages/framework-espidf/components/esptool_py/Kconfig.projbuild;/home/neum/.platformio/packages/framework-espidf/components/partition_table/Kconfig.projbuild"
+    },
+    "build_components" : [ "bootloader", "bootloader_support", "efuse", "esp32", "esp_common", "esp_rom", "esptool_py", "log", "main", "micro-ecc", "partition_table", "soc", "spi_flash", "xtensa", "" ],
+    "build_component_paths" : [ "/home/neum/.platformio/packages/framework-espidf/components/bootloader", "/home/neum/.platformio/packages/framework-espidf/components/bootloader_support", "/home/neum/.platformio/packages/framework-espidf/components/efuse", "/home/neum/.platformio/packages/framework-espidf/components/esp32", "/home/neum/.platformio/packages/framework-espidf/components/esp_common", "/home/neum/.platformio/packages/framework-espidf/components/esp_rom", "/home/neum/.platformio/packages/framework-espidf/components/esptool_py", "/home/neum/.platformio/packages/framework-espidf/components/log", "/home/neum/.platformio/packages/framework-espidf/components/bootloader/subproject/main", "/home/neum/.platformio/packages/framework-espidf/components/bootloader/subproject/components/micro-ecc", "/home/neum/.platformio/packages/framework-espidf/components/partition_table", "/home/neum/.platformio/packages/framework-espidf/components/soc", "/home/neum/.platformio/packages/framework-espidf/components/spi_flash", "/home/neum/.platformio/packages/framework-espidf/components/xtensa", "" ]
+}
