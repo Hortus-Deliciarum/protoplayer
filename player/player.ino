@@ -22,7 +22,7 @@
 #define RELEASE       1
 #define MAX_VOLUME    21
 #define MIN_VOLUME    15
-#define MAX_TRACKNUM  7
+#define MAX_TRACKNUM  0
 
 
 #define ROTARY1_PIN1 14
@@ -121,6 +121,14 @@ void released(Button2& btn) {
     }  
 }
 
+void longpress(Button2& btn) {
+    unsigned int time = btn.wasPressedFor();
+    Serial.print("You clicked ");
+    if (time > 2000) {
+        ESP.restart();
+    }
+}
+
 
 void setup(){
 
@@ -140,10 +148,11 @@ void setup(){
     button1.button.setReleasedHandler(released);
     button2.button.begin(PUSH2);
     button2.button.setReleasedHandler(released);
+    button2.button.setLongClickHandler(longpress);
 
     // NETWORK && OSC SETUP
     
-    HortusWifi(HortusWifi::Connection::BARETTI, 50, AWAKE);
+    HortusWifi(HortusWifi::Connection::HORTUS, 50, AWAKE);
 
     OscWiFi.subscribe(HortusWifi::RECV_PORT, PLAYER_PLAY,
     [](const OscMessage& m) {
